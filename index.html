@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LABO Transcription Audio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow+Semi+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style id="labo-css">
+/* LABO Transcription Audio — même famille visuelle que les autres LABO (banc de mesure sombre). */
+:root{
+  --bg:#0c0e10; --bay:#121518; --bay-2:#181c20; --rule:#262c32; --rule-2:#333a42;
+  --fg:#e6e9ec; --muted:#8e979f; --dim:#5f6870;
+  --amber:#e8b84a; --amber-ink:#1b1404; --phos:#86e0a2; --warn:#f0a35e; --bad:#ef6b6b;
+  --scope:#060708; --cV:#5b95f0;
+  --f-disp:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --f-ui:'Barlow Semi Condensed','Barlow','Arial Narrow',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-ui);font-size:15px;line-height:1.4;margin:0;padding:0 16px 40px}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-disp);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin:0;text-wrap:balance}
+h1{font-size:1.55rem} h2{font-size:1.05rem}
+h3{font-size:.86rem;color:var(--muted);margin:14px 0 6px}
+a{color:var(--amber)}
+button,select,input,textarea{font:inherit;color:var(--fg)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--bay-2);border:1px solid var(--rule-2);border-radius:6px;padding:7px 12px;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--fg)}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.primary{background:var(--amber);color:var(--amber-ink);border-color:var(--amber);font-weight:600}
+.btn.exp{border-color:var(--amber);color:var(--amber);font-weight:600}
+.btn.exp:hover{background:var(--amber);color:var(--amber-ink)}
+.btn.stop{border-color:var(--bad);color:var(--bad)}
+.btn.sm{padding:3px 9px;font-size:.82rem}
+.btn:disabled{opacity:.4;cursor:default}
+select,input[type=text],input[type=number],input[type=date]{background:var(--bay-2);border:1px solid var(--rule-2);border-radius:6px;padding:6px 8px;min-width:0}
+input[type=range],input[type=checkbox]{accent-color:var(--amber)}
+label.ck{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.88rem;cursor:pointer;white-space:nowrap}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 28px;padding-block:18px 14px;border-bottom:1px solid var(--rule)}
+.brand h1 span{color:var(--amber)}
+.brand h1 .site{color:var(--fg);text-decoration:none;text-transform:none;letter-spacing:.02em}
+.brand h1 .site:hover{color:var(--amber)}
+.brand .sub{color:var(--muted);margin:2px 0 0;font-size:.92rem}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end}
+.pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--f-disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--rule-2);color:var(--muted)}
+.pill::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.pill.on{color:var(--phos);border-color:#2f5a3c}
+.pill.on::before{background:var(--phos);animation:blink 1.2s steps(2,start) infinite}
+.pill.err{color:var(--bad);border-color:#6b2e2e}
+.pill.err::before{background:var(--bad)}
+@keyframes blink{to{visibility:hidden}}
+.bay{margin-top:16px;background:var(--bay);border:1px solid var(--rule);border-radius:8px;padding:12px}
+.bay-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-bottom:10px}
+.bay-head h2{margin-right:auto}
+.bay-head .tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;min-width:0}
+.cap{color:var(--dim);font-size:.8rem;margin:8px 0 0}
+.sig{margin:6px 0 0;font-family:var(--f-disp);font-weight:600;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:right}
+.kv{display:grid;grid-template-columns:minmax(120px,auto) minmax(0,1fr);gap:3px 12px;font-size:.88rem;margin:8px 0 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--f-mono);font-size:.82rem;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.stat{background:var(--bay-2);border:1px solid var(--rule);border-radius:6px;padding:7px 9px;min-width:0}
+.stat .l{font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-family:var(--f-mono);font-size:1.08rem;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .v small{color:var(--muted);font-size:.72rem}
+.stat .s{font-size:.72rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat.warn .v{color:var(--warn)} .stat.bad .v{color:var(--bad)} .stat.good .v{color:var(--phos)}
+.cv{display:block;width:100%;background:var(--scope);border-radius:4px}
+.edu{font-size:.84rem;color:var(--muted);border-left:2px solid var(--amber);padding:2px 0 2px 10px;margin:10px 0 0;max-width:120ch}
+.edu b{color:var(--fg)}
+.badge{display:inline-block;font-family:var(--f-disp);font-weight:600;letter-spacing:.06em;font-size:.72rem;text-transform:uppercase;padding:1px 7px;border-radius:4px;border:1px solid var(--rule-2);color:var(--muted);margin-right:4px}
+.badge.ok{color:var(--phos);border-color:#2f5a3c} .badge.am{color:var(--amber);border-color:#6b5420} .badge.bad{color:var(--bad);border-color:#6b2e2e}
+.log{font-family:var(--f-mono);font-size:.78rem;max-height:220px;overflow:auto;background:var(--scope);border-radius:4px;padding:6px 8px}
+.log div{white-space:pre-wrap;overflow-wrap:anywhere;padding:1px 0;color:var(--muted)}
+.log .warn{color:var(--warn)} .log .err{color:var(--bad)} .log .ok{color:var(--phos)}
+.log time{color:var(--dim);margin-right:8px}
+details.raw{margin-top:8px}
+details.raw summary{cursor:pointer;color:var(--muted);font-size:.86rem}
+pre.code{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);background:var(--scope);border-radius:4px;padding:8px;overflow:auto;max-height:420px;margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.progress{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress span{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+.drop{position:fixed;inset:0;z-index:40;background:rgba(12,14,16,.88);border:3px dashed var(--amber);display:flex;align-items:center;justify-content:center;font-family:var(--f-disp);font-size:2rem;letter-spacing:.06em;text-transform:uppercase;color:var(--amber)}
+.empty{color:var(--dim);font-size:.9rem;padding:18px 0;text-align:center}
+.srcwrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.srcwrap{grid-template-columns:minmax(0,1fr)}}
+audio.player{width:100%;display:block;margin-top:8px;color-scheme:dark}
+.form{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end}
+.form label.f{display:flex;flex-direction:column;gap:3px;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.form label.f input,.form label.f select{text-transform:none;letter-spacing:0;font-size:.9rem}
+.tc{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--amber)}
+.dur{font-family:var(--f-mono);color:var(--muted);font-size:.8rem}
+.lbl{font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:4px 0 3px}
+[contenteditable]:focus{outline:1px dashed var(--amber);outline-offset:1px}
+.hero{margin-top:16px;background:linear-gradient(90deg,#1d1808,var(--bay) 60%);border:1px solid #6b5420;border-radius:8px;padding:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;align-items:center}
+@media (max-width:800px){.hero{grid-template-columns:minmax(0,1fr)}}
+.btn.big{font-family:var(--f-disp);font-size:1.35rem;letter-spacing:.06em;text-transform:uppercase;padding:14px 26px;border-radius:8px;justify-content:center;box-shadow:0 0 0 3px rgba(232,184,74,.18)}
+.btn.big:hover{box-shadow:0 0 0 5px rgba(232,184,74,.3)}
+.steps{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.step{font-family:var(--f-disp);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--rule-2);color:var(--dim)}
+.step.run{color:var(--amber);border-color:var(--amber)} .step.ok{color:var(--phos);border-color:#2f5a3c} .step.err{color:var(--bad);border-color:#6b2e2e} .step.skip{color:var(--muted)}
+.step.ok::before{content:'✓ '} .step.err::before{content:'✕ '} .step.run::before{content:'● '}
+/* Locuteurs */
+.spklist{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.spkcard{display:flex;align-items:center;gap:8px;background:var(--bay-2);border:1px solid var(--rule);border-left:4px solid var(--c,var(--amber));border-radius:6px;padding:6px 8px;min-width:0}
+.spkcard input{width:13em;max-width:100%}
+.spkcard .n{font-family:var(--f-mono);font-size:.76rem;color:var(--muted);white-space:nowrap}
+/* Phrases */
+.phlist{display:flex;flex-direction:column;gap:4px;max-height:72vh;overflow:auto;background:var(--scope);border-radius:4px;padding:6px}
+.ph{display:grid;grid-template-columns:118px 178px minmax(0,1fr) auto;gap:10px;align-items:start;background:var(--bay-2);border:1px solid var(--rule);border-left:4px solid var(--c,var(--rule-2));border-radius:6px;padding:6px 8px}
+.ph.cur{border-color:var(--phos);border-left-color:var(--c,var(--phos));box-shadow:0 0 0 1px var(--phos) inset}
+.ph .tcb{background:none;border:0;padding:0;cursor:pointer;font-size:.82rem;text-align:left}
+.ph .tcb:hover{text-decoration:underline}
+.ph .dur{display:block;font-size:.7rem}
+.ph .spk{display:flex;gap:4px;align-items:center;min-width:0}
+.ph .spk select{flex:1 1 auto;min-width:0;padding:3px 6px;font-size:.84rem;color:var(--c,var(--fg))}
+.ph .txt{font-size:.95rem;line-height:1.45;min-height:1.45em;overflow-wrap:anywhere;padding:1px 2px}
+.ph .acts{display:flex;gap:4px;opacity:.55}
+.ph:hover .acts,.ph:focus-within .acts{opacity:1}
+@media (max-width:900px){.ph{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.ph .txt{grid-column:1/-1}.ph .acts{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{body{background:#fff;color:#000}.bay{break-inside:avoid}.phlist{max-height:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>LABO Transcription Audio <span id="sigA"></span> - <a class="site" id="siteA" href="#" target="_blank" rel="noopener"></a></h1>
+    <p class="sub">Transcription d'un fichier audio en texte : time code par phrase, nom du locuteur, export texte brut, WebVTT, SRT et XML · <span class="mono" style="font-size:.78rem" id="ver"></span></p>
+  </div>
+  <div class="ctl">
+    <span class="pill" id="pill">en attente</span>
+    <label class="btn primary">Ouvrir un audio…<input type="file" id="fileIn" accept="audio/*,.mp3,.m4a,.wav,.wave,.flac,.ogg,.oga,.opus,.aac,.aif,.aiff,.wma,.amr,.mp4,.mov,.webm,.mkv" hidden></label>
+  </div>
+</header>
+
+<section class="hero" aria-label="Transcription complète">
+  <div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end">
+    <button class="btn primary big" id="btnAll">▶ Transcrire l'audio</button>
+    <label class="f" style="display:flex;flex-direction:column;gap:3px;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--amber)">Langue parlée dans l'audio
+      <select id="langTop" style="font-size:1rem;padding:8px 10px;border-color:var(--amber);text-transform:none;letter-spacing:0"></select></label>
+  </div>
+  <div>
+    <div class="steps"><span class="step" id="st0">1 · Décodage audio</span><span class="step" id="st1">2 · Transcription</span><span class="step" id="st2">3 · Locuteurs</span>
+      <button class="btn stop sm" id="btnAllStop" hidden>Tout arrêter</button></div>
+    <div class="progress"><span id="allBar"></span></div>
+    <p class="cap" id="allState" style="margin-top:6px">Enchaîne la transcription et la détection des locuteurs sur le fichier ouvert. Tout le calcul a lieu dans votre navigateur.</p>
+  </div>
+</section>
+
+<div id="emptyState" class="bay"><p class="empty">Ouvrez un fichier audio (MP3, M4A, WAV, FLAC, OGG, AAC…) ou glissez-le n'importe où dans la page.<br>Tout le traitement a lieu dans votre navigateur : le fichier ne quitte pas votre disque.</p></div>
+
+<main id="app" hidden>
+<section class="bay" aria-labelledby="hSrc">
+  <div class="bay-head"><h2 id="hSrc">Source</h2><span class="mono" id="srcLine" style="color:var(--dim);font-size:.78rem;overflow-wrap:anywhere"></span></div>
+  <div class="srcwrap">
+    <div>
+      <canvas class="cv" id="wave" height="130" title="Cliquez pour placer le lecteur"></canvas>
+      <audio class="player" id="player" controls preload="metadata"></audio>
+      <p class="cap" id="playNote">Forme d'onde : cliquez pour placer le lecteur. La bande colorée sous l'onde indique le locuteur de chaque phrase.</p>
+    </div>
+    <div>
+      <dl class="kv" id="fileKv"></dl>
+      <h3>Notice</h3>
+      <div class="form">
+        <label class="f" style="flex:1 1 220px">Titre<input type="text" id="nTitle"></label>
+        <label class="f" style="flex:1 1 160px">Auteur / opérateur<input type="text" id="nAuthor"></label>
+        <label class="f">Date<input type="date" id="nDate"></label>
+        <label class="f" style="flex:1 1 100%">Notes générales<input type="text" id="nNotes"></label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bay" aria-labelledby="hMes">
+  <div class="bay-head"><h2 id="hMes">Mesures</h2></div>
+  <div class="stats" id="tiles"></div>
+</section>
+
+<section class="bay" aria-labelledby="hTr">
+  <div class="bay-head"><h2 id="hTr">Transcription de l'audio</h2>
+    <div class="tools"><button class="btn primary" id="btnTr">Transcrire</button><button class="btn stop" id="btnTrStop" hidden>Arrêter</button></div></div>
+  <div class="form">
+    <label class="f">Modèle Whisper<select id="model"></select></label>
+    <label class="f">Langue parlée<select id="lang"></select></label>
+    <label class="f">Calcul<select id="device"><option value="auto" selected>auto (WebGPU si présent)</option><option value="wasm">processeur (WebAssembly)</option></select></label>
+    <label class="f">Découpage<select id="segMode"><option value="phrase" selected>une ligne par phrase</option><option value="brut">segments Whisper bruts</option></select></label>
+    <label class="f">Phrase maximale<select id="maxDur"><option value="6">6 s (sous-titres courts)</option><option value="10" selected>10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></label>
+  </div>
+  <div class="progress"><span id="trBar"></span></div>
+  <p class="cap" id="trState">Le modèle est téléchargé une seule fois puis mis en cache par le navigateur. Le son reste sur votre machine.</p>
+  <p class="edu"><b>Time code par phrase.</b> Whisper date des segments de parole ; le logiciel les regroupe ou les recoupe sur la ponctuation pour obtenir une ligne par phrase. Quand un segment contient plusieurs phrases, leurs time codes sont répartis au prorata de la longueur du texte : la précision est de l'ordre de la demi-seconde. Changer le découpage ou la phrase maximale recalcule les lignes sans retranscrire.</p>
+</section>
+
+<section class="bay" aria-labelledby="hSpk">
+  <div class="bay-head"><h2 id="hSpk">Locuteurs</h2>
+    <div class="tools"><button class="btn primary" id="btnSpk">Détecter les locuteurs</button><button class="btn stop" id="btnSpkStop" hidden>Arrêter</button><button class="btn" id="btnSpkAdd">+ Ajouter un locuteur</button></div></div>
+  <div class="form">
+    <label class="f">Nombre de voix<select id="spkCount"><option value="auto">détection automatique</option><option value="1">1 voix</option><option value="2" selected>2 voix</option><option value="3">3 voix</option><option value="4">4 voix</option><option value="5">5 voix</option><option value="6">6 voix</option><option value="none">ne pas détecter (saisie manuelle)</option></select></label>
+  </div>
+  <div class="progress"><span id="spkBar"></span></div>
+  <p class="cap" id="spkState">Chaque phrase reçoit une empreinte vocale (modèle WavLM, ≈ 95 Mo, téléchargé une fois) ; les empreintes proches sont regroupées en voix. Renommez ensuite chaque voix ci-dessous.</p>
+  <div class="spklist" id="spkList"></div>
+  <p class="edu"><b>À relire.</b> Le regroupement des voix est une aide, pas une identification : il se trompe sur les phrases très courtes, les voix proches et les paroles superposées. Indiquer le nombre de voix le rend nettement plus fiable. Corrigez chaque ligne avec son menu ; le bouton <b>⇣</b> applique le locuteur de la ligne aux lignes suivantes jusqu'au prochain changement de voix.</p>
+</section>
+
+<section class="bay" aria-labelledby="hSeg">
+  <div class="bay-head"><h2 id="hSeg">Texte transcrit</h2><span class="mono" id="segTotal" style="color:var(--muted);font-size:.86rem"></span>
+    <div class="tools"><label class="ck"><input type="checkbox" id="follow" checked> suivre la lecture</label></div></div>
+  <div class="phlist" id="segs"><p class="empty">Lancez « Transcrire l'audio » : chaque phrase apparaîtra ici avec son time code et son locuteur.</p></div>
+  <p class="cap">Le texte se corrige directement dans chaque ligne. ▶ lit la phrase · ⤒ la fusionne avec la précédente · ✂ la coupe à la position du curseur dans le texte · ✕ la supprime.</p>
+  <p class="sig" id="sigB"></p>
+</section>
+
+<section class="bay" aria-labelledby="hExp">
+  <div class="bay-head"><h2 id="hExp">Export</h2></div>
+  <div class="form">
+    <button class="btn exp" id="btnTxt">Texte brut .txt</button>
+    <button class="btn exp" id="btnVtt">Sous-titres .vtt</button>
+    <button class="btn exp" id="btnSrt">Sous-titres .srt</button>
+    <button class="btn exp" id="btnXml">Fichier .xml</button>
+    <button class="btn primary" id="btnExpAll">Tout exporter</button>
+    <label class="ck"><input type="checkbox" id="optSpk" checked> nom du locuteur</label>
+    <label class="ck"><input type="checkbox" id="optTc" checked> time codes dans le texte brut</label>
+    <label class="f">Texte brut<select id="txtMode"><option value="ligne" selected>une phrase par ligne</option><option value="para">un paragraphe par prise de parole</option></select></label>
+  </div>
+  <details class="raw" id="prevBox"><summary>Aperçu de l'export</summary>
+    <div class="form" style="margin-top:6px"><label class="f">Format<select id="prevFmt"><option value="txt">texte brut</option><option value="vtt">WebVTT</option><option value="srt">SRT</option><option value="xml">XML</option></select></label></div>
+    <pre class="code" id="prev"></pre></details>
+  <p class="edu"><b>Formats.</b> Le <b>texte brut</b> se colle dans tout traitement de texte. Le <b>WebVTT</b> (.vtt) est le format des lecteurs web ; le locuteur y est porté par la balise de voix <span class="mono">&lt;v Nom&gt;</span>. Le <b>SRT</b> se charge dans tout lecteur ou logiciel de montage ; le locuteur y est écrit en tête de réplique. Le <b>XML</b> contient la notice, les locuteurs et chaque phrase avec ses time codes : il est lisible par une machine.</p>
+</section>
+
+<section class="bay" aria-labelledby="hLog">
+  <div class="bay-head"><h2 id="hLog">Journal</h2></div>
+  <div class="log" id="log"></div>
+</section>
+</main>
+<div class="drop" id="drop" hidden>Déposez l'audio</div>
+<script>
+'use strict';
+/* ===== Réglages de signature (modifiables) ===== */
+const SIGNATURE = 'JC Fouché 2026';
+const SITE = 'www.lehubnumerique.com';
+const VERSION = 'version 1.1 — 15 novembre 2026';
+const TRANSFORMERS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js';
+const FF_CORE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/';
+const SPK_MODEL = 'Xenova/wavlm-base-plus-sv';
+const LANGS = [['french','français'],['english','anglais'],['spanish','espagnol'],['german','allemand'],['italian','italien'],['portuguese','portugais'],['dutch','néerlandais'],['arabic','arabe'],['russian','russe'],['ukrainian','ukrainien'],['polish','polonais'],['turkish','turc'],['chinese','chinois'],['japanese','japonais'],['korean','coréen'],['','détection automatique']];
+/* gpu / cpu : précision des poids selon le moteur de calcul (undefined = réglage par défaut de la bibliothèque) */
+const MODELS = [
+  ['Xenova/whisper-tiny', 'tiny — 40 Mo, rapide', 'fp32'],
+  ['Xenova/whisper-base', 'base — 80 Mo', 'fp32'],
+  ['Xenova/whisper-small', 'small — 250 Mo, plus juste', 'fp32'],
+  ['onnx-community/whisper-large-v3-turbo', 'large-v3-turbo — 800 Mo, le plus juste (carte graphique conseillée)', { encoder_model:'fp16', decoder_model_merged:'q4' }, 'q8'] ];
+const COLORS = ['#e8b84a', '#5b95f0', '#86e0a2', '#f0a35e', '#e58ad0', '#6fd3e0', '#a98bf0', '#ef6b6b'];
+
+const $ = s => document.querySelector(s);
+const player = $('#player');
+const S = { file:null, url:null, pcm:null, pcmLen:0, dur:0, meta:null, raw:[], segs:[], speakers:[], trMeta:null, peaks:null,
+  trBusy:false, trAbort:false, spkBusy:false, spkAbort:false, allBusy:false, caret:null };
+
+$('#sigA').textContent = SIGNATURE; $('#siteA').textContent = SITE; $('#siteA').href = 'http://' + SITE;
+$('#ver').textContent = VERSION; $('#sigB').textContent = 'LABO Transcription Audio ' + SIGNATURE + ' - ' + SITE;
+for(const id of ['#lang', '#langTop']) $(id).innerHTML = LANGS.map(([v, l]) => '<option value="' + v + '"' + (v === 'french' ? ' selected' : '') + '>' + l + '</option>').join('');
+$('#model').innerHTML = MODELS.map(([v, l]) => '<option value="' + v + '"' + (v === 'Xenova/whisper-small' ? ' selected' : '') + '>' + l + '</option>').join('');
+
+/* ===== Outils ===== */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+const nf = (x, d=0) => Number(x).toLocaleString('fr-FR', {minimumFractionDigits:d, maximumFractionDigits:d});
+const bps = x => x == null ? '—' : x >= 1e6 ? nf(x/1e6, 2) + ' Mbit/s' : nf(x/1e3, 0) + ' kbit/s';
+const bytes = x => x >= 1e9 ? nf(x/1e9, 2) + ' Go' : x >= 1e6 ? nf(x/1e6, 1) + ' Mo' : nf(x/1e3, 0) + ' ko';
+const p2 = n => String(n).padStart(2, '0');
+/* Time code hh:mm:ss + millisecondes ; séparateur « , » (SRT, affichage) ou « . » (WebVTT, XML) */
+function tcode(t, sep=','){ const ms = Math.round(Math.max(0, t)*1000), h = Math.floor(ms/3600000), m = Math.floor(ms/60000)%60, s = Math.floor(ms/1000)%60;
+  return p2(h)+':'+p2(m)+':'+p2(s)+sep+String(ms%1000).padStart(3,'0'); }
+const tcShort = t => tcode(t).slice(0, 8);
+function fmtDur(s){ s = Math.max(0, Math.round(s)); return s >= 3600 ? Math.floor(s/3600) + ' h ' + p2(Math.floor(s/60)%60) : s >= 60 ? Math.floor(s/60) + ' min ' + p2(s%60) : s + ' s'; }
+function log(msg, lvl='info'){ const d = document.createElement('div'); d.className = lvl;
+  d.innerHTML = '<time>'+new Date().toLocaleTimeString('fr-FR')+'</time>'+esc(msg); $('#log').prepend(d); }
+function pill(txt, cls=''){ const p = $('#pill'); p.textContent = txt; p.className = 'pill ' + cls; }
+function kv(rows){ return rows.filter(r => r && r[1] != null && r[1] !== '').map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join(''); }
+function tile(l, v, s, cls=''){ return '<div class="stat ' + cls + '"><div class="l">' + esc(l) + '</div><div class="v">' + v + '</div><div class="s">' + esc(s || '') + '</div></div>'; }
+function setStep(k, st){ $('#st' + k).className = 'step ' + (st || ''); }
+const busy = () => S.trBusy || S.spkBusy;
+
+/* ===== Sauvegarde locale (par fichier) ===== */
+function storeKey(){ return S.file ? 'labo-transcription:' + S.file.name + ':' + S.file.size : null; }
+let saveT = null;
+function saveLocal(){ clearTimeout(saveT); saveT = setTimeout(() => { const k = storeKey(); if(!k) return;
+  try{ localStorage.setItem(k, JSON.stringify({ notice:notice(), segs:S.segs, speakers:S.speakers, trMeta:S.trMeta })); }catch(e){} }, 400); }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(storeKey()) || 'null'); }catch(e){ return null; } }
+function notice(){ return { titre:$('#nTitle').value, auteur:$('#nAuthor').value, date:$('#nDate').value, notes:$('#nNotes').value }; }
+['#nTitle','#nAuthor','#nDate','#nNotes'].forEach(id => $(id).addEventListener('input', saveLocal));
+
+/* ===== Ouverture et décodage ===== */
+async function openFile(file){
+  if(busy()){ alert('Un traitement est en cours : arrêtez-le avant de changer de fichier.'); return; }
+  if(S.url) URL.revokeObjectURL(S.url);
+  Object.assign(S, { file, url:URL.createObjectURL(file), pcm:null, pcmLen:0, dur:0, meta:null, raw:[], segs:[], speakers:[], trMeta:null, peaks:null });
+  $('#emptyState').hidden = true; $('#app').hidden = false; $('#srcLine').textContent = file.name;
+  $('#nTitle').value = file.name.replace(/\.[^.]+$/, ''); $('#nAuthor').value = ''; $('#nNotes').value = ''; $('#nDate').value = new Date().toISOString().slice(0,10);
+  const saved = loadLocal();
+  if(saved && saved.notice){ const n = saved.notice; $('#nTitle').value = n.titre || $('#nTitle').value; $('#nAuthor').value = n.auteur || ''; $('#nDate').value = n.date || $('#nDate').value; $('#nNotes').value = n.notes || ''; }
+  if(saved && Array.isArray(saved.segs) && saved.segs.length){ S.segs = saved.segs; S.speakers = saved.speakers || []; S.trMeta = saved.trMeta || null;
+    log('Transcription précédente de ce fichier retrouvée : ' + S.segs.length + ' phrases', 'ok'); }
+  ensureSpeakers();
+  [0, 1, 2].forEach(k => setStep(k, '')); for(const b of ['#allBar', '#trBar', '#spkBar']) $(b).style.width = '0';
+  player.src = S.url; renderAll();
+  pill('décodage', 'on'); setStep(0, 'run'); log('Ouverture de ' + file.name + ' (' + bytes(file.size) + ')');
+  try{ await decode(); setStep(0, 'ok'); pill('prêt');
+    if(S.segs.length){ setStep(1, 'ok'); }
+  }catch(e){ setStep(0, 'err'); pill('erreur', 'err'); log('Décodage : ' + (e.message || e), 'err'); $('#allState').textContent = 'Erreur de décodage : ' + (e.message || e); }
+  renderAll(); setBusyUi();
+  if(S.pendingAll){ S.pendingAll = false; if(S.pcm) runAll(); }
+}
+/* Le son décodé (16 kHz mono, 16 bits) n'est pas gardé dans la mémoire de la page : il est rangé dans un Blob, que le navigateur peut placer sur disque,
+   et relu par petits morceaux (un bloc de 2 min pour la transcription, une phrase pour l'empreinte vocale). Seule l'enveloppe (une crête par 50 ms) reste en mémoire. */
+const ENV = 800; // échantillons par point d'enveloppe (50 ms)
+function makeAcc(){ return { n:0, env:[], cur:0, peak:0, sq:0, quiet:0, frames:0, fe:0, fn:0, parts:[] }; }
+function ingest(A, i16){ let { n, cur, peak, sq, quiet, frames, fe, fn } = A; const env = A.env;
+  for(let i = 0; i < i16.length; i++){ const v = i16[i] / 32768, a = v < 0 ? -v : v; if(a > cur) cur = a; fe += v*v;
+    if(++fn === 320){ frames++; if(fe / 320 < 1e-5) quiet++; sq += fe; fe = 0; fn = 0; }
+    if(++n % ENV === 0){ env.push(cur); if(cur > peak) peak = cur; cur = 0; } }
+  Object.assign(A, { n, cur, peak, sq, quiet, frames, fe, fn }); A.parts.push(i16); }
+async function pcmRead(a, b){ a = Math.max(0, Math.round(a)); b = Math.min(S.pcmLen, Math.round(b)); if(b <= a) return new Float32Array(0);
+  const i16 = new Int16Array(await S.pcm.slice(a*2, b*2).arrayBuffer()), f = new Float32Array(i16.length); for(let i = 0; i < f.length; i++) f[i] = i16[i] / 32768; return f; }
+function mediaDuration(){ return new Promise(res => { if(isFinite(player.duration) && player.duration > 0){ res(player.duration); return; }
+  const fin = () => { clearTimeout(to); player.removeEventListener('loadedmetadata', fin); player.removeEventListener('error', fin); res(isFinite(player.duration) ? player.duration : 0); };
+  const to = setTimeout(fin, 6000); player.addEventListener('loadedmetadata', fin); player.addEventListener('error', fin); }); }
+/* Décodage d'un seul bloc par le navigateur : rapide, mais tout le son passe en mémoire — réservé aux fichiers courts */
+async function decodeNative(A){ const ctx = new OfflineAudioContext(1, 16000, 16000);
+  const ab = await ctx.decodeAudioData(await S.file.arrayBuffer()); const n = ab.length, ch = ab.numberOfChannels, CH = 16000 * 60;
+  const data = Array.from({length:ch}, (_, c) => ab.getChannelData(c));
+  for(let o = 0; o < n; o += CH){ const m = Math.min(CH, n - o), i16 = new Int16Array(m);
+    for(let i = 0; i < m; i++){ let v = 0; for(let c = 0; c < ch; c++) v += data[c][o + i]; v = v / ch * 32767; i16[i] = v > 32767 ? 32767 : v < -32768 ? -32768 : v; }
+    ingest(A, i16); }
+  return ch; }
+async function decode(){
+  $('#allState').textContent = 'Décodage de l\'audio…';
+  const dur0 = await mediaDuration(), long = dur0 ? dur0 > 15 * 60 : S.file.size > 30e6, A = makeAcc(); let channels = null, how = 'navigateur';
+  const viaFF = async () => { how = 'FFmpeg'; channels = await ffAudio(S.file, u8 => ingest(A, new Int16Array(u8.buffer, u8.byteOffset, u8.byteLength >> 1)), dur0); };
+  if(long){ log('Fichier long (' + (dur0 ? fmtDur(dur0) : bytes(S.file.size)) + ') : décodage en flux par FFmpeg, sans charger le son en mémoire');
+    try{ await viaFF(); }
+    catch(e){ if(dur0 && dur0 < 45 * 60){ log('FFmpeg indisponible (' + (e.message || e) + ') : décodage par le navigateur', 'warn'); Object.assign(A, makeAcc()); how = 'navigateur'; channels = await decodeNative(A); }
+      else throw new Error('FFmpeg n\'a pas pu décoder ce fichier long (' + (e.message || e) + '). Vérifiez la connexion à cdn.jsdelivr.net, ou découpez le fichier.'); } }
+  else { try{ channels = await decodeNative(A); }
+    catch(e){ log('Le navigateur ne décode pas ce format (' + (e.message || e) + ') : FFmpeg prend le relais', 'warn'); Object.assign(A, makeAcc()); await viaFF(); } }
+  if(A.n < 1600) throw new Error('aucun son décodé');
+  if(A.n % ENV) A.env.push(A.cur);
+  S.pcm = new Blob(A.parts); A.parts = null; S.pcmLen = A.n; S.dur = A.n / 16000; S.peaks = Float32Array.from(A.env);
+  const db = x => x > 0 ? 20 * Math.log10(x) : -Infinity;
+  S.meta = { channels, how, peak:db(Math.max(A.peak, A.cur)), rms:db(Math.sqrt(A.sq / Math.max(1, A.frames * 320))), silence:A.frames ? A.quiet / A.frames : 0 };
+  log('Audio décodé (' + how + ') : ' + tcode(S.dur) + ' à 16 kHz mono · ' + bytes(S.pcmLen * 2) + ' rangés hors de la mémoire de la page', 'ok');
+  $('#allState').textContent = 'Audio prêt : ' + fmtDur(S.dur) + '. Choisissez la langue puis lancez la transcription.';
+}
+
+/* ===== FFmpeg (WebAssembly) dans un worker : secours pour les formats que le navigateur ne décode pas ===== */
+const FF_WORKER = `
+let core = null, mounted = false;
+self.onmessage = async (e) => { const m = e.data;
+  try {
+    if (m.type === 'load') {
+      importScripts(m.base + 'ffmpeg-core.js');
+      core = await self.createFFmpegCore({ mainScriptUrlOrBlob: m.base + 'ffmpeg-core.js#' + btoa(JSON.stringify({ wasmURL: m.base + 'ffmpeg-core.wasm' })) });
+      core.setLogger((d) => self.postMessage({ type: 'log', msg: d.message }));
+      self.postMessage({ type: 'done', id: m.id });
+    } else if (m.type === 'mount') {
+      if (mounted) { try { core.FS.unmount('/in'); } catch (_) {} } else { core.FS.mkdir('/in'); }
+      core.FS.mount(core.FS.filesystems.WORKERFS, { files: [m.file] }, '/in'); mounted = true;
+      self.postMessage({ type: 'done', id: m.id, path: '/in/' + m.file.name });
+    } else if (m.type === 'exec') {
+      try { core.FS.mkdir('/out'); } catch (_) {}
+      core.exec(...m.args); const ret = core.ret; core.reset(); let n = 0;
+      for (const f of core.FS.readdir('/out').filter((x) => x[0] !== '.').sort()) { const d = core.FS.readFile('/out/' + f); core.FS.unlink('/out/' + f); n += d.byteLength;
+        self.postMessage({ type: 'part', data: d }, [d.buffer]); }
+      self.postMessage({ type: 'done', id: m.id, ret, bytes: n });
+    }
+  } catch (err) { self.postMessage({ type: 'err', id: m.id, msg: String((err && err.message) || err) }); }
+};`;
+const FF = { w:null, seq:0, pend:{}, lines:[], onPart:null, onLog:null };
+function ffCall(msg){ return new Promise((res, rej) => { const id = ++FF.seq; FF.pend[id] = {res, rej}; FF.w.postMessage({...msg, id}); }); }
+function ffKill(){ if(FF.w) FF.w.terminate(); FF.w = null; for(const k in FF.pend){ FF.pend[k].rej(new Error('arrêt demandé')); delete FF.pend[k]; } }
+/* FFmpeg lit le fichier par morceaux (il n'est jamais chargé en entier) et écrit le son en segments de 5 min, remis un par un à onPart (Uint8Array, 16 bits) */
+async function ffAudio(file, onPart, durHint){
+  try{
+    FF.w = new Worker(URL.createObjectURL(new Blob([FF_WORKER], {type:'text/javascript'})));
+    FF.w.onmessage = e => { const d = e.data; if(d.type === 'log'){ FF.lines.push(d.msg); if(FF.lines.length > 400) FF.lines.splice(0, 200); FF.onLog && FF.onLog(d.msg); return; }
+      if(d.type === 'part'){ FF.onPart && FF.onPart(d.data); return; }
+      const p = FF.pend[d.id]; if(!p) return; delete FF.pend[d.id]; d.type === 'err' ? p.rej(new Error(d.msg)) : p.res(d); };
+    FF.w.onerror = e => { e.preventDefault(); for(const k in FF.pend){ FF.pend[k].rej(new Error(e.message || 'FFmpeg : chargement impossible (connexion à cdn.jsdelivr.net ?)')); delete FF.pend[k]; } };
+    log('Chargement de FFmpeg WebAssembly (≈ 31 Mo la première fois, ensuite en cache)…'); await ffCall({type:'load', base:FF_CORE});
+    const r0 = await ffCall({type:'mount', file}); FF.lines = []; FF.onPart = onPart; const t0 = performance.now(); let last = 0;
+    FF.onLog = m => { const t = m.match(/time=(\d+):(\d+):([\d.]+)/); if(!t) return; const now = performance.now(); if(now - last < 300) return; last = now;
+      const sec = +t[1]*3600 + +t[2]*60 + +t[3], el = (now - t0)/1000, pct = durHint ? Math.min(1, sec/durHint) : 0;
+      $('#allBar').style.width = (pct*100) + '%'; $('#allState').textContent = 'Décodage de l\'audio : ' + tcShort(sec) + (durHint ? ' / ' + tcShort(durHint) : '') + (el > 1 ? ' · ' + nf(sec/el, 0) + '× temps réel' : '') + (pct > .01 ? ' · reste ≈ ' + fmtDur(el/pct - el) : ''); };
+    const r = await ffCall({type:'exec', args:['-hide_banner', '-y', '-i', 'file:' + r0.path, '-map', '0:a:0', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', '-f', 'segment', '-segment_time', '300', '-segment_format', 's16le', '/out/s%05d.raw']});
+    if(r.ret !== 0 || !r.bytes) throw new Error('FFmpeg n\'a pas pu extraire l\'audio : ' + (FF.lines.filter(l => /error|invalid|no such|not found|could not|failed/i.test(l)).slice(-2).join(' / ') || FF.lines.slice(-2).join(' / ') || 'erreur inconnue'));
+    const m = FF.lines.join('\n').match(/Audio: [^\n]*?\d+ Hz, ([^,\n]+)/), lay = m ? m[1].trim() : '';
+    return { mono:1, stereo:2 }[lay] || +((lay.match(/^(\d+) channels/) || [])[1]) || null;
+  } finally { FF.onPart = null; FF.onLog = null; ffKill(); $('#allBar').style.width = '0'; } }
+
+/* ===== Rendu : fiche, mesures, forme d'onde ===== */
+function spkOf(id){ return S.speakers.find(s => s.id === id) || S.speakers[0]; }
+function spkColor(id){ const s = spkOf(id); return s ? COLORS[s.c % COLORS.length] : COLORS[0]; }
+function langLabel(){ const m = S.trMeta; if(!m) return '—'; const l = LANGS.find(x => x[0] === (m.lang || '')); if(m.lang) return l ? l[1] : m.lang;
+  const d = m.detected; return d ? 'détectée : ' + Object.entries(d).sort((a, b) => b[1] - a[1]).map(([c]) => LANG_FR[c] || c).join(', ') : 'détection automatique'; }
+function renderFile(){ const f = S.file; if(!f) return;
+  $('#fileKv').innerHTML = kv([['Fichier', f.name], ['Taille', bytes(f.size) + ' (' + nf(f.size) + ' octets)'], ['Type MIME', f.type || 'non communiqué'],
+    ['Dernière modification', new Date(f.lastModified).toLocaleString('fr-FR')], ['Durée', S.dur ? tcode(S.dur) + ' (' + nf(S.dur, 3) + ' s)' : 'décodage…'],
+    ['Décodage', S.meta ? (S.meta.how === 'FFmpeg' ? 'FFmpeg (WebAssembly)' : 'navigateur') : null]]); }
+function renderTiles(){ const M = S.meta || {}, words = S.segs.reduce((a, s) => a + (s.text.trim() ? s.text.trim().split(/\s+/).length : 0), 0);
+  const used = new Set(S.segs.map(s => s.spk)), speech = S.segs.reduce((a, s) => a + (s.end - s.start), 0);
+  $('#tiles').innerHTML = [
+    tile('Durée', S.dur ? tcShort(S.dur) : '—', S.dur ? nf(S.dur, 1) + ' s' : ''),
+    tile('Format', esc(((S.file.name.match(/\.([^.]+)$/) || [,''])[1] || '—').toUpperCase()), S.file.type || ''),
+    tile('Canaux', M.channels ? M.channels + (M.channels === 1 ? ' <small>mono</small>' : M.channels === 2 ? ' <small>stéréo</small>' : '') : '—', 'mixés en mono pour l\'analyse'),
+    tile('Débit moyen', S.dur ? bps(S.file.size * 8 / S.dur) : '—', 'taille ÷ durée'),
+    tile('Niveau crête', M.peak != null && isFinite(M.peak) ? nf(M.peak, 1) + ' <small>dBFS</small>' : '—', M.rms != null && isFinite(M.rms) ? 'moyen ' + nf(M.rms, 1) + ' dBFS' : '', M.peak > -0.1 ? 'warn' : ''),
+    tile('Silence', M.silence != null ? nf(M.silence * 100, 0) + ' <small>%</small>' : '—', 'trames sous −50 dBFS'),
+    tile('Phrases', S.segs.length || '—', S.segs.length ? 'parole ' + fmtDur(speech) : 'transcription non lancée'),
+    tile('Mots', words ? nf(words) : '—', words && speech ? nf(words / (speech / 60), 0) + ' mots/min' : ''),
+    tile('Locuteurs', S.segs.length ? used.size : '—', S.segs.length ? [...used].map(id => (spkOf(id) || {}).name).join(', ') : ''),
+    tile('Langue', esc(S.trMeta ? langLabel() : '—'), S.trMeta ? S.trMeta.model.split('/')[1] : ''),
+  ].join(''); }
+function drawWave(){ const c = $('#wave'); if(!c.clientWidth) return; const dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = 130;
+  c.width = W*dpr; c.height = H*dpr; const g = c.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+  const dur = S.dur || player.duration || 1, band = 10, ch = H - 20 - band, mid = 4 + ch/2;
+  g.strokeStyle = '#1e2328'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, mid); g.lineTo(W, mid); g.stroke();
+  g.fillStyle = '#5f6870'; g.font = '9px "IBM Plex Mono", monospace'; g.textAlign = 'center';
+  for(let k = 0; k <= 8; k++){ const x = Math.min(W - 24, Math.max(24, W*k/8)); g.fillText(tcShort(dur*k/8), x, H - 5); }
+  if(S.peaks){ const pk = S.peaks; let mx = 0; for(const v of pk) if(v > mx) mx = v; const gain = mx > 0 ? Math.min(8, .95 / mx) : 1; g.fillStyle = '#5b95f0';
+    for(let x = 0; x < W; x++){ const a = Math.floor(x/W*pk.length), b = Math.max(a + 1, Math.floor((x + 1)/W*pk.length)); let m = 0; for(let i = a; i < b; i++) if(pk[i] > m) m = pk[i];
+      const h = Math.max(1, m*gain*ch); g.fillRect(x, mid - h/2, 1, h); } }
+  const y = 4 + ch + 2; for(const s of S.segs){ g.fillStyle = spkColor(s.spk); g.fillRect(s.start/dur*W, y, Math.max(1, (s.end - s.start)/dur*W - .5), band - 3); }
+  if(player.duration){ const x = player.currentTime/dur*W; g.strokeStyle = '#86e0a2'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, 2); g.lineTo(x, 4 + ch + band); g.stroke(); } }
+$('#wave').addEventListener('click', e => { const r = e.currentTarget.getBoundingClientRect(), d = S.dur || player.duration; if(d) player.currentTime = (e.clientX - r.left)/r.width*d; });
+window.addEventListener('resize', drawWave);
+
+/* ===== Locuteurs : liste, renommage ===== */
+function ensureSpeakers(){ if(!S.speakers.length) S.speakers = [{ id:'L1', name:'Locuteur 1', c:0 }];
+  for(const s of S.segs) if(!S.speakers.some(x => x.id === s.spk)) s.spk = S.speakers[0].id; }
+function addSpeaker(){ let n = S.speakers.length + 1; while(S.speakers.some(s => s.id === 'L' + n)) n++;
+  const used = new Set(S.speakers.map(s => s.c)); let c = 0; while(used.has(c) && c < COLORS.length) c++;
+  const sp = { id:'L' + n, name:'Locuteur ' + n, c:c % COLORS.length }; S.speakers.push(sp); return sp; }
+function renderSpeakers(){ const cnt = {}, tm = {}; for(const s of S.segs){ cnt[s.spk] = (cnt[s.spk] || 0) + 1; tm[s.spk] = (tm[s.spk] || 0) + s.end - s.start; }
+  $('#spkList').innerHTML = S.speakers.map(sp => '<div class="spkcard" style="--c:' + COLORS[sp.c % COLORS.length] + '" data-id="' + sp.id + '">' +
+    '<input type="text" value="' + esc(sp.name) + '" aria-label="Nom du locuteur" placeholder="Nom du locuteur">' +
+    '<span class="n">' + (cnt[sp.id] || 0) + ' phr. · ' + fmtDur(tm[sp.id] || 0) + '</span>' +
+    (S.speakers.length > 1 ? '<button class="btn sm stop" data-a="del" title="Supprimer ce locuteur (ses phrases passent au premier de la liste)">✕</button>' : '') + '</div>').join(''); }
+$('#spkList').addEventListener('change', e => { const card = e.target.closest('.spkcard'); if(!card || e.target.tagName !== 'INPUT') return;
+  const sp = S.speakers.find(s => s.id === card.dataset.id); sp.name = e.target.value.trim() || sp.name; renderSegs(); renderTiles(); saveLocal(); });
+$('#spkList').addEventListener('click', e => { if(e.target.dataset.a !== 'del') return; const id = e.target.closest('.spkcard').dataset.id, n = S.segs.filter(s => s.spk === id).length;
+  if(n && !confirm('Supprimer ce locuteur ? Ses ' + n + ' phrase(s) seront attribuées au premier locuteur restant.')) return;
+  S.speakers = S.speakers.filter(s => s.id !== id); ensureSpeakers(); renderAll(); saveLocal(); });
+$('#btnSpkAdd').addEventListener('click', () => { addSpeaker(); renderSpeakers(); renderSegs(); saveLocal(); });
+
+/* ===== Phrases : affichage et correction ===== */
+function rowHtml(s, k){ const opts = S.speakers.map(sp => '<option value="' + sp.id + '"' + (sp.id === s.spk ? ' selected' : '') + '>' + esc(sp.name) + '</option>').join('');
+  return '<div class="ph" data-k="' + k + '" style="--c:' + spkColor(s.spk) + '">' +
+    '<div><button class="tc tcb" data-act="go" title="Placer le lecteur ici">' + tcode(s.start) + '</button><span class="dur">→ ' + tcode(s.end) + '</span></div>' +
+    '<div class="spk"><select data-act="spk" aria-label="Locuteur">' + opts + '</select><button class="btn sm" data-act="prop" title="Appliquer ce locuteur aux lignes suivantes, jusqu\'au prochain changement de voix">⇣</button></div>' +
+    '<div class="txt" contenteditable="true" spellcheck="true" data-t="' + k + '">' + esc(s.text) + '</div>' +
+    '<div class="acts"><button class="btn sm" data-act="play" title="Lire la phrase">▶</button>' + (k ? '<button class="btn sm" data-act="merge" title="Fusionner avec la phrase précédente">⤒</button>' : '') +
+    '<button class="btn sm" data-act="split" title="Couper la phrase à la position du curseur dans le texte">✂</button><button class="btn sm stop" data-act="del" title="Supprimer la phrase">✕</button></div></div>'; }
+/* Pendant la transcription : seules les nouvelles lignes sont ajoutées, la liste n'est pas redessinée */
+function appendRows(from){ const box = $('#segs'); if(!from) box.innerHTML = ''; box.insertAdjacentHTML('beforeend', S.segs.slice(from).map((s, i) => rowHtml(s, from + i)).join(''));
+  $('#segTotal').textContent = S.segs.length + ' phrases'; box.scrollTop = box.scrollHeight; }
+function renderSegs(){ const box = $('#segs');
+  $('#segTotal').textContent = S.segs.length ? S.segs.length + ' phrases · ' + new Set(S.segs.map(s => s.spk)).size + ' locuteur(s)' : '';
+  if(!S.segs.length){ box.innerHTML = '<p class="empty">Lancez « Transcrire l\'audio » : chaque phrase apparaîtra ici avec son time code et son locuteur.</p>'; refreshPreview(); return; }
+  box.innerHTML = S.segs.map(rowHtml).join('');
+  curK = -1; refreshPreview(); }
+function renderAll(){ renderFile(); renderTiles(); renderSpeakers(); renderSegs(); drawWave(); }
+let stopAt = null, curK = -1;
+player.addEventListener('timeupdate', () => { const t = player.currentTime; if(stopAt != null && t >= stopAt){ player.pause(); stopAt = null; }
+  drawWave(); let k = -1; for(let i = 0; i < S.segs.length; i++){ if(t >= S.segs[i].start - .02 && t < S.segs[i].end) { k = i; break; } }
+  if(k === curK) return; const box = $('#segs'); if(curK >= 0 && box.children[curK]) box.children[curK].classList.remove('cur'); curK = k;
+  const el = k >= 0 ? box.children[k] : null; if(!el || !el.classList) return; el.classList.add('cur');
+  if($('#follow').checked && !player.paused && !box.contains(document.activeElement)) box.scrollTo({ top: el.offsetTop - box.offsetTop - box.clientHeight/3, behavior:'smooth' }); });
+player.addEventListener('loadedmetadata', drawWave);
+document.addEventListener('selectionchange', () => { const sel = document.getSelection(); if(!sel || !sel.anchorNode) return;
+  const el = (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement)?.closest?.('.txt'); if(!el) return;
+  const r = document.createRange(); r.selectNodeContents(el); try{ r.setEnd(sel.anchorNode, sel.anchorOffset); }catch(e){ return; } S.caret = { k:+el.dataset.t, off:r.toString().length }; });
+$('#segs').addEventListener('input', e => { if(e.target.dataset.t != null){ S.segs[+e.target.dataset.t].text = e.target.textContent.replace(/\s+/g, ' ').trim(); saveLocal(); } });
+$('#segs').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.dataset.t != null){ e.preventDefault(); e.target.blur(); } });
+$('#segs').addEventListener('change', e => { if(e.target.dataset.act !== 'spk') return; const row = e.target.closest('.ph'), s = S.segs[+row.dataset.k]; s.spk = e.target.value;
+  row.style.setProperty('--c', spkColor(s.spk)); renderSpeakers(); renderTiles(); drawWave(); refreshPreview(); saveLocal(); });
+$('#segs').addEventListener('click', e => { const act = e.target.dataset.act, row = e.target.closest('.ph'); if(!act || !row || act === 'spk') return; const k = +row.dataset.k, s = S.segs[k];
+  if(act === 'go'){ player.currentTime = s.start + .001; return; }
+  if(act === 'play'){ player.currentTime = s.start + .001; stopAt = s.end; player.play().catch(() => {}); return; }
+  if(act === 'prop'){ let j = k + 1; if(j >= S.segs.length) return; const old = S.segs[j].spk; while(j < S.segs.length && S.segs[j].spk === old) S.segs[j++].spk = s.spk; }
+  if(act === 'merge'){ const p = S.segs[k - 1]; p.end = s.end; p.text = (p.text + ' ' + s.text).trim(); S.segs.splice(k, 1); }
+  if(act === 'del'){ if(!confirm('Supprimer cette phrase ?')) return; S.segs.splice(k, 1); }
+  if(act === 'split'){ const c = S.caret, len = s.text.length; let off = c && c.k === k ? c.off : -1;
+    if(off <= 0 || off >= len){ alert('Placez d\'abord le curseur dans le texte de la phrase, à l\'endroit de la coupure.'); return; }
+    const a = s.text.slice(0, off).trim(), b = s.text.slice(off).trim(); if(!a || !b) return; const t = s.start + (s.end - s.start) * off / len;
+    S.segs.splice(k, 1, { start:s.start, end:t, text:a, spk:s.spk }, { start:t, end:s.end, text:b, spk:s.spk }); S.caret = null; }
+  const top = $('#segs').scrollTop; renderAll(); $('#segs').scrollTop = top; saveLocal(); });
+
+/* ===== Découpage en phrases à partir des segments de Whisper ===== */
+const ENDP = /[.!?…。！？]["»”’)\]]*$/;
+const ABBR = /(?:^|\s)(?:M|MM|Mme|Mmes|Mlle|Dr|Pr|Me|Mgr|St|Ste|Mr|Mrs|Ms|Sr|Jr|vs|cf|av|bd|n°|[A-Z])\.$/;
+/* Coupe après . ! ? … suivis d'un espace (ou 。！？), sauf abréviation (« M. », « Dr. », initiale) et nombre suivi d'un autre nombre */
+function splitSentences(text){ const out = [], re = /[.!?…]+["»”’)\]]*(?=\s|$)|[。！？]+/g; let last = 0, m;
+  while((m = re.exec(text))){ const end = m.index + m[0].length, t = text.slice(last, end).trim();
+    if(m[0] === '.' && (ABBR.test(t) || (/\d\.$/.test(t) && /^\s*\d/.test(text.slice(end))))) continue;
+    out.push(text.slice(last, end)); last = end; }
+  if(text.slice(last).trim()) out.push(text.slice(last)); return out; }
+/* Coupe une ligne trop longue à la virgule (ou à l'espace) la plus proche du milieu ; le temps est réparti au prorata des caractères */
+function splitLong(s, maxDur, maxChars){ if((s.end - s.start <= maxDur && s.text.length <= maxChars) || s.text.length < 24) return [s];
+  const t = s.text, mid = t.length / 2; let best = -1, bd = Infinity;
+  for(const re of [/[,;:–—]\s/g, /\s/g]){ let m; while((m = re.exec(t))){ const pos = m.index + (re.source[0] === '[' ? 1 : 0), d = Math.abs(pos - mid); if(pos > 8 && pos < t.length - 8 && d < bd){ bd = d; best = pos; } }
+    if(best >= 0 && bd < t.length * .3) break; }
+  if(best < 0) return [s]; const tm = s.start + (s.end - s.start) * best / t.length;
+  return [...splitLong({ start:s.start, end:tm, text:t.slice(0, best).trim() }, maxDur, maxChars), ...splitLong({ start:tm, end:s.end, text:t.slice(best).trim() }, maxDur, maxChars)]; }
+function buildSegs(raw, mode, maxDur){ const maxChars = Math.round(maxDur * 22);
+  if(mode === 'brut') return raw.map(r => ({ start:r.start, end:r.end, text:r.text }));
+  const pieces = [];
+  for(const r of raw){ const parts = splitSentences(r.text), tot = parts.reduce((a, p) => a + p.length, 0) || 1; let acc = 0;
+    for(const p of parts){ const a = r.start + (r.end - r.start) * acc / tot; acc += p.length; const b = r.start + (r.end - r.start) * acc / tot; if(p.trim()) pieces.push({ start:a, end:b, text:p.trim() }); } }
+  const out = []; let cur = null;
+  for(const p of pieces){
+    if(cur && !ENDP.test(cur.text) && p.start - cur.end < 1.5 && p.end - cur.start <= maxDur && cur.text.length + p.text.length < maxChars){ cur.end = p.end; cur.text += ' ' + p.text; }
+    else { if(cur) out.push(cur); cur = { ...p }; } }
+  if(cur) out.push(cur);
+  return out.flatMap(s => splitLong(s, maxDur, maxChars)).filter(s => s.text); }
+function rebuild(keepSpk){ const old = S.segs; S.segs = buildSegs(S.raw, $('#segMode').value, +$('#maxDur').value);
+  // chaque nouvelle ligne reprend le locuteur de l'ancienne ligne qui la recouvre le plus
+  for(const s of S.segs){ let best = null, ov = 0; if(keepSpk) for(const o of old){ const v = Math.min(s.end, o.end) - Math.max(s.start, o.start); if(v > ov){ ov = v; best = o; } } s.spk = best ? best.spk : S.speakers[0].id; } }
+for(const id of ['#segMode', '#maxDur']) $(id).addEventListener('change', () => { if(!S.raw.length || S.trBusy){ if(S.segs.length && !S.raw.length) log('Découpage : relancez « Transcrire » pour l\'appliquer (les segments d\'origine ne sont pas conservés d\'une session à l\'autre)', 'warn'); return; }
+  if(!confirm('Recalculer les lignes avec ce découpage ? Les corrections de texte faites à la main seront perdues (les locuteurs sont conservés).')) return;
+  rebuild(true); renderAll(); saveLocal(); log('Découpage recalculé : ' + S.segs.length + ' phrases', 'ok'); });
+
+/* ===== Transcription (Whisper dans un worker) ===== */
+/* Worker « classique » + import() dynamique : les workers de type module sont refusés quand la page est ouverte depuis le disque (file://) */
+const WORKER_SRC = `
+let lib = null, asr = null;
+/* Détection de la langue : Whisper prédit le jeton de langue sur les 30 s les plus sonores du bloc */
+async function detectLang(audio) {
+  const W = Math.min(audio.length, 30 * 16000), step = 5 * 16000; let best = 0, bestE = -1;
+  for (let o = 0; o + W <= audio.length; o += step) { let e = 0; for (let i = o; i < o + W; i += 160) e += audio[i] * audio[i]; if (e > bestE) { bestE = e; best = o; } }
+  if (bestE >= 0 && bestE / (W / 160) < 1e-6) return { code: 'fr', score: 0, silent: true };
+  const { input_features } = await asr.processor(audio.subarray(best, best + W));
+  const gc = asr.model.generation_config, sot = gc.decoder_start_token_id;
+  const ids = new lib.Tensor('int64', BigInt64Array.from([BigInt(sot)]), [1, 1]);
+  const out = await asr.model({ input_features, decoder_input_ids: ids });
+  const lg = out.logits, V = lg.dims[lg.dims.length - 1], data = lg.data, off = data.length - V;
+  let tok = null, v = -Infinity; const all = [];
+  for (const [t, id] of Object.entries(gc.lang_to_id)) { const x = Number(data[off + id]); all.push(x); if (x > v) { v = x; tok = t; } }
+  const mx = Math.max(...all), den = all.reduce((a, x) => a + Math.exp(x - mx), 0);
+  return { code: tok.slice(2, -2), score: Math.exp(v - mx) / den };
+}
+self.onmessage = async (e) => { const m = e.data;
+  try {
+    if (!lib) { lib = await import('${TRANSFORMERS}'); lib.env.allowLocalModels = false; }
+    const { pipeline } = lib;
+    if (m.type === 'load') {
+      const pc = (p) => self.postMessage({ type: 'dl', p: { status: p.status, file: p.file, progress: p.progress, loaded: p.loaded, total: p.total } });
+      if (m.device === 'webgpu') {
+        try { asr = await pipeline('automatic-speech-recognition', m.model, { device: 'webgpu', dtype: m.gpu || 'fp32', progress_callback: pc }); self.postMessage({ type: 'ready', device: 'WebGPU' }); return; }
+        catch (err) { self.postMessage({ type: 'info', msg: 'WebGPU indisponible (' + (err.message || err) + '), repli sur le processeur' }); }
+      }
+      const o = { progress_callback: pc }; if (m.cpu) o.dtype = m.cpu;
+      asr = await pipeline('automatic-speech-recognition', m.model, o);
+      self.postMessage({ type: 'ready', device: 'WebAssembly' });
+    } else if (m.type === 'run') {
+      const o = { return_timestamps: true, chunk_length_s: 30, stride_length_s: 5, task: 'transcribe', no_repeat_ngram_size: 8 };
+      let detected = null;
+      if (m.language) o.language = m.language;
+      else { try { detected = await detectLang(m.audio); o.language = detected.code; } catch (err) { self.postMessage({ type: 'info', msg: 'détection de langue impossible (' + ((err && err.message) || err) + '), français par défaut' }); o.language = 'fr'; } }
+      const out = await asr(m.audio, o);
+      self.postMessage({ type: 'res', id: m.id, detected, out: { text: out.text, chunks: (out.chunks || []).map(c => ({ timestamp: c.timestamp, text: c.text })) } });
+    }
+  } catch (err) { self.postMessage({ type: 'err', msg: String((err && err.message) || err) }); }
+};`;
+let worker = null, workerModel = null;
+function workerCall(msg, onEvent){ return new Promise((res, rej) => { worker.onmessage = e => { const d = e.data;
+    if(d.type === 'err') rej(new Error(d.msg)); else if(d.type === 'ready' || d.type === 'res') res(d); else if(d.type === 'info' && !onEvent) log(d.msg, 'warn'); else onEvent && onEvent(d); };
+  worker.onerror = e => { e.preventDefault(); rej(new Error(e.message || 'impossible de charger le moteur de transcription (vérifiez la connexion à cdn.jsdelivr.net et huggingface.co)')); }; worker.postMessage(msg, msg.audio ? [msg.audio.buffer] : []); }); }
+/* Whisper peut « boucler » (même mot répété des centaines de fois) : toute suite de 1 à 6 mots répétée plus de 3 fois d'affilée est ramenée à 2 occurrences */
+function collapseRepeats(t){ t = String(t || '');
+  for(let n = 1; n <= 6; n++){ const re = new RegExp('((?:\\S+\\s+){' + (n - 1) + '}\\S+)(?:[\\s,.;:!?…]+\\1){3,}', 'giu'); t = t.replace(re, '$1 $1'); }
+  return t.replace(/\s{2,}/g, ' ').trim(); }
+const LANG_FR = { fr:'français', en:'anglais', es:'espagnol', de:'allemand', it:'italien', pt:'portugais', nl:'néerlandais', ar:'arabe', ru:'russe', uk:'ukrainien', pl:'polonais', tr:'turc',
+  zh:'chinois', ja:'japonais', ko:'coréen', ca:'catalan', ro:'roumain', el:'grec', he:'hébreu', hi:'hindi', sv:'suédois', da:'danois', no:'norvégien', fi:'finnois', cs:'tchèque', hu:'hongrois', br:'breton', eu:'basque', oc:'occitan' };
+/* Blocs de 2 min environ, coupés au creux de niveau le plus proche (lu sur l'enveloppe) pour ne pas trancher un mot */
+function blockBounds(env, len){ const B = [0], L = 120 * 16000 / ENV, R = 8 * 16000 / ENV;
+  for(;;){ const c = B[B.length - 1] / ENV + L; if((c + R + 40) * ENV >= len) break; let best = c, be = Infinity;
+    for(let o = c - R; o <= c + R; o++){ let e = 0; for(let i = 0; i < 6; i++) e += env[o + i] || 0; if(e < be){ be = e; best = o + 3; } }
+    B.push(Math.round(best) * ENV); }
+  B.push(len); return B; }
+
+async function transcribe(){
+  if(!S.pcm || busy()) return false;
+  if(S.segs.length && !confirm('Relancer la transcription ? Le texte et les locuteurs actuels seront remplacés.')) return false;
+  let ok = false; S.trBusy = true; S.trAbort = false; setBusyUi(); pill('transcription', 'on'); setStep(1, 'run'); $('#trBar').style.width = '0';
+  const model = $('#model').value, lang = $('#lang').value, def = MODELS.find(m => m[0] === model);
+  let device = $('#device').value; if(device === 'auto') device = navigator.gpu ? 'webgpu' : 'wasm';
+  const t0 = performance.now(), total = S.dur;
+  try{
+    if(!worker || workerModel !== model + device){ if(worker) worker.terminate();
+      worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], {type:'text/javascript'})));
+      $('#trState').textContent = 'Chargement du modèle ' + model + '…'; const files = {};
+      const r = await workerCall({ type:'load', model, device, gpu:def[2], cpu:def[3] }, d => {
+        if(d.type === 'info') log(d.msg, 'warn');
+        if(d.type === 'dl' && d.p.status === 'progress'){ files[d.p.file] = [d.p.loaded || 0, d.p.total || 0];
+          const L = Object.values(files), lo = L.reduce((a, b) => a + b[0], 0), to = L.reduce((a, b) => a + b[1], 0);
+          $('#trBar').style.width = (to ? lo/to*100 : 0) + '%'; $('#trState').textContent = 'Téléchargement du modèle : ' + bytes(lo) + ' / ' + bytes(to); } });
+      workerModel = model + device; log('Modèle ' + model + ' prêt (' + r.device + ')', 'ok'); }
+    S.raw = []; S.segs = []; S.speakers = []; ensureSpeakers(); S.trMeta = { model, lang, device, date:new Date().toISOString() }; renderAll();
+    const B = blockBounds(S.peaks, S.pcmLen); $('#trBar').style.width = '0';
+    for(let b = 0; b < B.length - 1; b++){ if(S.trAbort) break;
+      const part = await pcmRead(B[b], B[b + 1]), base = B[b]/16000, end = B[b + 1]/16000, raw0 = S.raw.length, seg0 = S.segs.length;
+      $('#trState').textContent = 'Transcription ' + tcShort(base) + ' → ' + tcShort(end) + ' / ' + tcShort(total) + '…';
+      const r = await workerCall({ type:'run', id:b, audio:part, language:lang || null });
+      if(r.detected){ const d = r.detected, nm = LANG_FR[d.code] || d.code; S.trMeta.detected = S.trMeta.detected || {}; S.trMeta.detected[d.code] = (S.trMeta.detected[d.code] || 0) + 1;
+        log('Langue détectée ' + tcShort(base) + ' → ' + tcShort(end) + ' : ' + nm + (d.silent ? ' (bloc silencieux)' : ' (' + Math.round(d.score * 100) + ' %)')); }
+      for(const c of r.out.chunks){ let [s, e] = c.timestamp || []; if(s == null) continue; s += base; e = e == null ? Math.min(end, s + 4) : e + base;
+        const text = collapseRepeats((c.text || '').trim()); if(!text) continue;
+        const last = S.raw.length > raw0 ? S.raw[S.raw.length - 1] : null; if(last && last.text === text && s - last.end < 1){ last.end = e; continue; }
+        S.raw.push({ start:s, end:Math.min(total, Math.max(e, s + .3)), text }); }
+      // seules les phrases du bloc sont calculées et ajoutées à l'écran ; le travail est sauvegardé à chaque bloc
+      for(const s of buildSegs(S.raw.slice(raw0), $('#segMode').value, +$('#maxDur').value)){ s.spk = S.speakers[0].id; S.segs.push(s); }
+      appendRows(seg0); renderTiles(); drawWave(); saveLocal();
+      const el = (performance.now() - t0)/1000, pct = end/total; $('#trBar').style.width = (Math.min(1, pct) * 100) + '%';
+      $('#trState').textContent = S.segs.length + ' phrases · ' + tcShort(end) + ' traité · ' + nf(end / Math.max(el, .1), 1) + '× temps réel · reste ≈ ' + fmtDur(pct > .01 ? el/pct - el : 0); }
+    $('#trState').textContent = (S.trAbort ? 'Transcription interrompue · ' : 'Transcription terminée · ') + S.segs.length + ' phrases en ' + fmtDur((performance.now() - t0)/1000) + '. Le texte est modifiable directement dans les lignes.';
+    log('Transcription : ' + S.segs.length + ' phrases (' + S.raw.length + ' segments Whisper)', 'ok'); ok = !S.trAbort && S.segs.length > 0;
+    if(!S.trAbort && !S.segs.length) log('Aucune parole reconnue dans ce fichier', 'warn');
+  }catch(e){ if(S.trAbort){ $('#trState').textContent = 'Transcription arrêtée · ' + S.segs.length + ' phrases conservées.'; log('Transcription arrêtée', 'warn'); }
+    else { $('#trState').textContent = 'Erreur : ' + (e.message || e); log('Transcription : ' + (e.message || e), 'err'); pill('erreur', 'err'); if(worker){ worker.terminate(); worker = null; workerModel = null; } } }
+  S.trBusy = false; setBusyUi(); setStep(1, ok ? 'ok' : S.trAbort ? 'skip' : 'err'); if(!$('#pill').classList.contains('err')) pill('prêt');
+  $('#segs').scrollTop = 0; renderAll(); saveLocal(); return ok; }
+function setBusyUi(){ const b = busy(); $('#btnTr').disabled = b || !S.pcm; $('#btnSpk').disabled = b; $('#btnAll').disabled = b || S.allBusy;
+  $('#btnTrStop').hidden = !S.trBusy; $('#btnSpkStop').hidden = !S.spkBusy; }
+
+/* ===== Locuteurs : empreinte vocale par phrase (WavLM) puis regroupement ===== */
+const SPK_WORKER = `
+let lib = null, proc = null, model = null;
+self.onmessage = async (e) => { const m = e.data;
+  try {
+    if (!lib) { lib = await import('${TRANSFORMERS}'); lib.env.allowLocalModels = false; }
+    const T = lib;
+    if (m.type === 'load') {
+      const pc = (p) => self.postMessage({ type: 'dl', p: { status: p.status, file: p.file, loaded: p.loaded, total: p.total } });
+      proc = await T.AutoProcessor.from_pretrained(m.model, { progress_callback: pc });
+      const C = T.WavLMForXVector || T.AutoModel; let dev = 'WebAssembly';
+      if (m.device === 'webgpu') { try { model = await C.from_pretrained(m.model, { device: 'webgpu', dtype: 'fp32', progress_callback: pc }); dev = 'WebGPU'; }
+        catch (err) { model = null; self.postMessage({ type: 'info', msg: 'WebGPU indisponible pour les empreintes (' + (err.message || err) + '), repli sur le processeur' }); } }
+      if (!model) model = await C.from_pretrained(m.model, { progress_callback: pc });
+      self.postMessage({ type: 'done', id: m.id, device: dev });
+    } else if (m.type === 'embed') {
+      const out = await model(await proc(m.audio)); let t = out.embeddings || out.logits, v;
+      if (t && t.dims.length === 2) v = Float32Array.from(t.data);
+      else { t = out.last_hidden_state; const [, n, d] = t.dims; v = new Float32Array(d); for (let i = 0; i < n; i++) for (let j = 0; j < d; j++) v[j] += t.data[i * d + j] / n; }
+      let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; for (let i = 0; i < v.length; i++) v[i] /= s;
+      self.postMessage({ type: 'done', id: m.id, v }, [v.buffer]);
+    }
+  } catch (err) { self.postMessage({ type: 'err', id: m.id, msg: String((err && err.message) || err) }); }
+};`;
+const SPK = { w:null, seq:0, pend:{}, onDl:null, key:'' };
+function spkCall(msg, tr){ return new Promise((res, rej) => { const id = ++SPK.seq; SPK.pend[id] = {res, rej}; SPK.w.postMessage({...msg, id}, tr || []); }); }
+function spkKill(){ if(SPK.w) SPK.w.terminate(); SPK.w = null; SPK.key = ''; for(const k in SPK.pend){ SPK.pend[k].rej(new Error('arrêt demandé')); delete SPK.pend[k]; } }
+function spkStart(){ if(SPK.w) return; SPK.w = new Worker(URL.createObjectURL(new Blob([SPK_WORKER], {type:'text/javascript'})));
+  SPK.w.onmessage = e => { const d = e.data; if(d.type === 'dl'){ SPK.onDl && SPK.onDl(d.p); return; } if(d.type === 'info'){ log(d.msg, 'warn'); return; }
+    const p = SPK.pend[d.id]; if(!p) return; delete SPK.pend[d.id]; d.type === 'err' ? p.rej(new Error(d.msg)) : p.res(d); };
+  SPK.w.onerror = e => { e.preventDefault(); const msg = e.message || 'impossible de charger le moteur d\'empreintes vocales (vérifiez la connexion à cdn.jsdelivr.net et huggingface.co)';
+    for(const k in SPK.pend){ SPK.pend[k].rej(new Error(msg)); delete SPK.pend[k]; } spkKill(); }; }
+const dot = (a, b) => { let s = 0; for(let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; };
+/* Regroupement hiérarchique (liaison moyenne, similarité cosinus). k fixé, ou arrêt quand les groupes ne se ressemblent plus (seuil). Renvoie une étiquette par empreinte. */
+function clusterVoices(E, k, thr){ const n = E.length; if(n === 0) return []; if(n === 1 || k === 1) return new Array(n).fill(0);
+  // au-delà de 300 empreintes, le regroupement se fait sur les 300 phrases les plus longues (les premières du tableau trié par l'appelant)
+  const m = Math.min(n, 300), M = new Float32Array(m * m); for(let i = 0; i < m; i++) for(let j = i + 1; j < m; j++) M[i*m + j] = M[j*m + i] = dot(E[i], E[j]);
+  let act = Array.from({length:m}, (_, i) => i); const size = new Float32Array(m).fill(1), mem = act.map(i => [i]);
+  for(;;){ if(act.length <= 1 || (k && act.length <= k)) break; let bi = -1, bj = -1, bs = -Infinity;
+    for(let a = 0; a < act.length; a++) for(let b = a + 1; b < act.length; b++){ const s = M[act[a]*m + act[b]]; if(s > bs){ bs = s; bi = act[a]; bj = act[b]; } }
+    if(!k && bs < thr && act.length <= 8) break;
+    for(const a of act){ if(a === bi || a === bj) continue; M[bi*m + a] = M[a*m + bi] = (size[bi]*M[bi*m + a] + size[bj]*M[bj*m + a]) / (size[bi] + size[bj]); }
+    size[bi] += size[bj]; mem[bi].push(...mem[bj]); act = act.filter(a => a !== bj); }
+  // en mode automatique, un groupe minuscule (1 ou 2 phrases, moins de 3 %) est un artefact : il est dissous
+  if(!k && act.length > 1){ const big = act.filter(a => mem[a].length > 2 || mem[a].length / m >= .03); if(big.length) act = big; }
+  const D = E[0].length; let cent = act.map(a => { const c = new Float32Array(D); for(const i of mem[a]) for(let d = 0; d < D; d++) c[d] += E[i][d]; return c; });
+  const lab = new Array(n).fill(0);
+  for(let it = 0; it < 3; it++){ for(let i = 0; i < n; i++){ let b = 0, bs = -Infinity; for(let c = 0; c < cent.length; c++){ const s = dot(E[i], cent[c]) / (Math.sqrt(dot(cent[c], cent[c])) || 1); if(s > bs){ bs = s; b = c; } } lab[i] = b; }
+    const nc = cent.map(() => new Float32Array(D)), cnt = cent.map(() => 0); for(let i = 0; i < n; i++){ cnt[lab[i]]++; for(let d = 0; d < D; d++) nc[lab[i]][d] += E[i][d]; }
+    cent = cent.map((c, j) => cnt[j] ? nc[j] : c); }
+  return lab; }
+async function diarize(){
+  if(!S.segs.length){ alert('Lancez d\'abord la transcription.'); return false; } if(!S.pcm || busy()) return false;
+  const choice = $('#spkCount').value; if(choice === 'none'){ $('#spkState').textContent = 'Détection désactivée : attribuez les locuteurs à la main dans chaque ligne.'; return 'skip'; }
+  S.spkBusy = true; S.spkAbort = false; setBusyUi(); pill('locuteurs', 'on'); setStep(2, 'run'); $('#spkBar').style.width = '0';
+  const t0 = performance.now(); let ok = false;
+  try{
+    const k = choice === 'auto' ? 0 : +choice, SR = 16000; let lab;
+    // phrases assez longues pour porter une empreinte (≥ 1,2 s), les plus longues d'abord ; extrait limité à 6 s
+    const items = S.segs.map((s, i) => ({ i, d:s.end - s.start })).filter(x => x.d >= 1.2).sort((a, b) => b.d - a.d);
+    if(k === 1 || !items.length){ lab = []; }
+    else {
+      let device = $('#device').value; if(device === 'auto') device = navigator.gpu ? 'webgpu' : 'wasm';
+      if(worker){ worker.terminate(); worker = null; workerModel = null; } // libère la mémoire du modèle de transcription
+      spkStart(); const files = {};
+      SPK.onDl = p => { if(p.status !== 'progress') return; files[p.file] = [p.loaded || 0, p.total || 0];
+        const L = Object.values(files), lo = L.reduce((a, b) => a + b[0], 0), to = L.reduce((a, b) => a + b[1], 0);
+        $('#spkBar').style.width = (to ? lo/to*100 : 0) + '%'; $('#spkState').textContent = 'Téléchargement du modèle d\'empreintes vocales : ' + bytes(lo) + ' / ' + bytes(to); };
+      if(SPK.key !== device){ $('#spkState').textContent = 'Chargement du modèle d\'empreintes vocales…'; const r = await spkCall({ type:'load', model:SPK_MODEL, device }); SPK.key = device; log('Empreintes vocales : ' + SPK_MODEL + ' prêt (' + r.device + ')', 'ok'); }
+      $('#spkBar').style.width = '0'; const E = [];
+      for(let n = 0; n < items.length; n++){ if(S.spkAbort) throw new Error('arrêt demandé'); const s = S.segs[items[n].i];
+        let a = s.start, b = s.end; if(b - a > 6){ const c = (a + b)/2; a = c - 3; b = c + 3; }
+        const clip = await pcmRead(a*SR, b*SR);
+        const r = await spkCall({ type:'embed', audio:clip }, [clip.buffer]); E.push(r.v);
+        const el = (performance.now() - t0)/1000, pct = (n + 1)/items.length; $('#spkBar').style.width = (pct*100) + '%';
+        if(n % 3 === 0) $('#spkState').textContent = 'Empreinte vocale ' + (n + 1) + ' / ' + items.length + ' · reste ≈ ' + fmtDur(el/pct - el); }
+      lab = clusterVoices(E, k, 0.82); }
+    // étiquette par phrase : empreinte si elle existe, sinon la voix de la phrase voisine la plus proche dans le temps
+    const L = new Array(S.segs.length).fill(-1); items.forEach((x, n) => { if(lab.length) L[x.i] = lab[n]; });
+    if(!lab.length) L.fill(0);
+    for(let i = 0; i < L.length; i++){ if(L[i] >= 0) continue; let p = i - 1, q = i + 1; while(p >= 0 && L[p] < 0) p--; while(q < L.length && L[q] < 0) q++;
+      const dp = p >= 0 ? S.segs[i].start - S.segs[p].end : Infinity, dq = q < L.length ? S.segs[q].start - S.segs[i].end : Infinity; L[i] = dp === Infinity && dq === Infinity ? 0 : dp <= dq ? L[p] : L[q]; }
+    // numérotation des voix dans l'ordre d'apparition ; les noms déjà saisis sont repris dans le même ordre
+    const order = []; for(const l of L) if(!order.includes(l)) order.push(l);
+    const names = S.speakers.map(s => s.name); S.speakers = order.map((_, n) => ({ id:'L' + (n + 1), name:names[n] && !/^Locuteur \d+$/.test(names[n]) ? names[n] : 'Locuteur ' + (n + 1), c:n % COLORS.length }));
+    S.segs.forEach((s, i) => { s.spk = 'L' + (order.indexOf(L[i]) + 1); });
+    $('#spkBar').style.width = '100%';
+    $('#spkState').textContent = order.length + ' voix repérée(s) sur ' + S.segs.length + ' phrases en ' + fmtDur((performance.now() - t0)/1000) + '. Renommez-les ci-dessous et corrigez les lignes mal attribuées.';
+    log('Locuteurs : ' + order.length + ' voix (' + (k ? 'nombre imposé' : 'détection automatique') + ')', 'ok'); ok = true;
+  }catch(e){ if(S.spkAbort){ $('#spkState').textContent = 'Détection des locuteurs arrêtée.'; log('Détection des locuteurs arrêtée', 'warn'); }
+    else { $('#spkState').textContent = 'Erreur : ' + (e.message || e) + ' — les locuteurs restent attribuables à la main.'; log('Locuteurs : ' + (e.message || e), 'err'); pill('erreur', 'err'); } }
+  SPK.onDl = null; S.spkBusy = false; setBusyUi(); setStep(2, ok ? 'ok' : S.spkAbort ? 'skip' : 'err'); if(!$('#pill').classList.contains('err')) pill('prêt');
+  renderAll(); saveLocal(); return ok; }
+
+/* ===== Enchaînement complet ===== */
+async function runAll(){
+  if(!S.file){ S.pendingAll = true; $('#fileIn').click(); return; }
+  if(S.allBusy || busy()) return; if(!S.pcm){ alert('L\'audio n\'a pas pu être décodé.'); return; }
+  S.allBusy = true; S.allAbort = false; setBusyUi(); $('#btnAllStop').hidden = false; const t0 = performance.now();
+  const tick = setInterval(() => { const a = parseFloat($('#trBar').style.width) || 0, b = parseFloat($('#spkBar').style.width) || 0;
+    $('#allBar').style.width = (S.spkBusy ? 70 + b*.3 : a*.7) + '%'; $('#allState').textContent = (S.spkBusy ? 'Étape 3 / 3 — Locuteurs : ' + $('#spkState').textContent : 'Étape 2 / 3 — Transcription : ' + $('#trState').textContent).slice(0, 200); }, 400);
+  let r1 = false, r2 = 'skip';
+  try{ r1 = await transcribe(); if(r1 && !S.allAbort) r2 = await diarize(); else if(!r1) setStep(2, 'skip'); }catch(e){ log('Analyse : ' + (e.message || e), 'err'); }
+  clearInterval(tick); $('#allBar').style.width = '100%';
+  $('#allState').textContent = (S.allAbort ? 'Traitement arrêté' : !r1 ? 'Transcription non aboutie' : r2 === false ? 'Transcription terminée ; détection des locuteurs en échec' : 'Transcription terminée') +
+    ' en ' + fmtDur((performance.now() - t0)/1000) + '. Relisez le texte, nommez les locuteurs, puis exportez.';
+  S.allBusy = false; setBusyUi(); $('#btnAllStop').hidden = true; }
+function stopAll(){ S.allAbort = true; S.trAbort = true; S.spkAbort = true; if(S.spkBusy) spkKill(); $('#trState').textContent = 'Arrêt après le bloc en cours…'; }
+
+/* ===== Exports ===== */
+function baseName(){ return (S.file ? S.file.name.replace(/\.[^.]+$/, '') : 'audio').replace(/[^\w\-. ]+/g, '_'); }
+function download(name, content, type){ const b = new Blob([content], {type}); const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000); log('Export : ' + name, 'ok'); }
+const nameOf = s => (spkOf(s.spk) || {}).name || '';
+const withSpk = () => $('#optSpk').checked;
+function buildTxt(){ const tcOn = $('#optTc').checked, sp = withSpk(), n = notice(); let out = '';
+  if(n.titre) out += n.titre + '\r\n'; const sub = [n.auteur, n.date, S.dur ? 'durée ' + tcShort(S.dur) : ''].filter(Boolean).join(' · '); if(sub) out += sub + '\r\n'; if(out) out += '\r\n';
+  if($('#txtMode').value === 'para'){ let cur = null; const P = [];
+    for(const s of S.segs){ if(cur && cur.spk === s.spk) cur.text += ' ' + s.text; else P.push(cur = { spk:s.spk, start:s.start, text:s.text }); }
+    return out + P.map(p => (tcOn ? '[' + tcShort(p.start) + '] ' : '') + (sp ? nameOf(p) + ' : ' : '') + p.text).join('\r\n\r\n') + '\r\n'; }
+  return out + S.segs.map(s => (tcOn ? '[' + tcShort(s.start) + '] ' : '') + (sp ? nameOf(s) + ' : ' : '') + s.text).join('\r\n') + '\r\n'; }
+function buildSrt(){ const sp = withSpk(); return S.segs.map((s, i) => (i + 1) + '\r\n' + tcode(s.start) + ' --> ' + tcode(s.end) + '\r\n' + (sp ? nameOf(s) + ' : ' : '') + s.text + '\r\n').join('\r\n'); }
+function buildVtt(){ const sp = withSpk(), e = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'), n = notice();
+  return 'WEBVTT' + (n.titre ? ' - ' + n.titre.replace(/-->/g, '→').replace(/[\r\n]+/g, ' ') : '') + '\n\n' +
+    S.segs.map((s, i) => (i + 1) + '\n' + tcode(s.start, '.') + ' --> ' + tcode(s.end, '.') + '\n' + (sp ? '<v ' + nameOf(s).replace(/[<>&\r\n]+/g, ' ').trim() + '>' : '') + e(s.text) + '\n').join('\n'); }
+function buildXml(){ const n = notice(), xa = esc, el = (tag, v, attrs='') => v == null || v === '' ? '' : '    <' + tag + attrs + '>' + xa(v) + '</' + tag + '>\n';
+  const cnt = {}, tm = {}; for(const s of S.segs){ cnt[s.spk] = (cnt[s.spk] || 0) + 1; tm[s.spk] = (tm[s.spk] || 0) + s.end - s.start; }
+  let x = '<?xml version="1.0" encoding="UTF-8"?>\n<transcriptionAudio version="1.0" logiciel="LABO Transcription Audio ' + xa(VERSION) + '" auteurLogiciel="' + xa(SIGNATURE + ' - ' + SITE) + '" genere="' + new Date().toISOString() + '">\n';
+  x += '  <notice>\n' + el('titre', n.titre) + el('auteur', n.auteur) + el('date', n.date) + el('notes', n.notes) + '  </notice>\n';
+  x += '  <fichier>\n' + el('nom', S.file.name) + el('taille', S.file.size, ' unite="octets"') + el('typeMime', S.file.type) + el('derniereModification', new Date(S.file.lastModified).toISOString()) +
+    el('duree', S.dur ? S.dur.toFixed(3) : '', ' unite="s" tc="' + tcode(S.dur, '.') + '"') + el('canaux', S.meta && S.meta.channels) + '  </fichier>\n';
+  x += '  <locuteurs nombre="' + S.speakers.length + '">\n' + S.speakers.map(sp => '    <locuteur id="' + xa(sp.id) + '" nom="' + xa(sp.name) + '" phrases="' + (cnt[sp.id] || 0) + '" tempsDeParole="' + (tm[sp.id] || 0).toFixed(3) + '"/>\n').join('') + '  </locuteurs>\n';
+  x += '  <transcription' + (S.trMeta ? ' modele="' + xa(S.trMeta.model) + '" langue="' + xa(langLabel()) + '" date="' + xa(S.trMeta.date) + '"' : '') + ' phrases="' + S.segs.length + '">\n';
+  S.segs.forEach((s, i) => { x += '    <phrase numero="' + (i + 1) + '" tcEntree="' + tcode(s.start, '.') + '" tcSortie="' + tcode(s.end, '.') + '" debut="' + s.start.toFixed(3) + '" fin="' + s.end.toFixed(3) + '" duree="' + (s.end - s.start).toFixed(3) +
+    '" locuteur="' + xa(s.spk) + '" nomLocuteur="' + xa(nameOf(s)) + '">' + xa(s.text) + '</phrase>\n'; });
+  return x + '  </transcription>\n</transcriptionAudio>\n'; }
+const EXP = { txt:['.txt', buildTxt, 'text/plain;charset=utf-8', true], vtt:['.vtt', buildVtt, 'text/vtt;charset=utf-8', false], srt:['.srt', buildSrt, 'application/x-subrip;charset=utf-8', true], xml:['.xml', buildXml, 'application/xml;charset=utf-8', false] };
+function need(){ if(!S.file){ alert('Ouvrez d\'abord un fichier audio.'); return false; } if(!S.segs.length){ alert('Aucune transcription : lancez « Transcrire l\'audio ».'); return false; } return true; }
+function exportAs(k){ const [ext, fn, type, bom] = EXP[k]; download(baseName() + ext, (bom ? '﻿' : '') + fn(), type); }
+function refreshPreview(){ if(!$('#prevBox').open) return; const t = S.segs.length ? EXP[$('#prevFmt').value][1]() : 'Aucune transcription.'; $('#prev').textContent = t.length > 6000 ? t.slice(0, 6000) + '\n…' : t; }
+for(const k of ['txt', 'vtt', 'srt', 'xml']) $('#btn' + k[0].toUpperCase() + k.slice(1)).addEventListener('click', () => { if(need()) exportAs(k); });
+$('#btnExpAll').addEventListener('click', async () => { if(!need()) return; for(const k of ['txt', 'vtt', 'srt', 'xml']){ exportAs(k); await new Promise(r => setTimeout(r, 400)); } });
+for(const id of ['#optSpk', '#optTc', '#txtMode', '#prevFmt']) $(id).addEventListener('change', refreshPreview);
+$('#prevBox').addEventListener('toggle', refreshPreview);
+
+/* ===== Événements ===== */
+function setLang(v){ $('#lang').value = v; $('#langTop').value = v; try{ localStorage.setItem('labo-transcription:lang', v); }catch(e){}
+  if(S.segs.length && S.trMeta && (S.trMeta.lang || '') !== v) log('Langue changée : relancez « Transcrire » pour l\'appliquer', 'warn'); }
+$('#lang').addEventListener('change', e => setLang(e.target.value));
+$('#langTop').addEventListener('change', e => setLang(e.target.value));
+try{ const l = localStorage.getItem('labo-transcription:lang'); if(l != null && LANGS.some(x => x[0] === l)) setLang(l); }catch(e){}
+$('#btnAll').addEventListener('click', runAll);
+$('#btnAllStop').addEventListener('click', stopAll);
+$('#btnTr').addEventListener('click', transcribe);
+$('#btnTrStop').addEventListener('click', () => { S.trAbort = true; $('#trState').textContent = 'Arrêt après le bloc en cours…'; });
+$('#btnSpk').addEventListener('click', diarize);
+$('#btnSpkStop').addEventListener('click', () => { S.spkAbort = true; spkKill(); });
+$('#fileIn').addEventListener('change', e => { if(e.target.files[0]) openFile(e.target.files[0]); e.target.value = ''; });
+let dragN = 0;
+window.addEventListener('dragenter', e => { e.preventDefault(); dragN++; $('#drop').hidden = false; });
+window.addEventListener('dragleave', () => { if(--dragN <= 0){ dragN = 0; $('#drop').hidden = true; } });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragN = 0; $('#drop').hidden = true; const f = e.dataTransfer.files[0]; if(f) openFile(f); });
+window.addEventListener('beforeunload', e => { if(busy()){ e.preventDefault(); e.returnValue = ''; } });
+setBusyUi();
+log('LABO Transcription Audio prêt — ' + VERSION);
+</script>
+</body></html>
